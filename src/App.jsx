@@ -7,37 +7,38 @@ import "./App.css";
 const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
 
 function App() {
-  const [weatherData, setWeatherData] = useState(null);
+  const [weather, setWeather] = useState(null);
+  const [city, setCity] = useState("");
+  const [forecast, setForecast] = useState([]);
 
   useEffect(() => {
-    fetch(
-      `https://api.hgbrasil.com/weather?format=json-cors&key=${API_KEY}&city_name=São Luís,MA`
-    )
-      .then((response) => response.json())
-      .then((data) => {
+    async function fetchWeather() {
+      try {
+        const response = await fetch(
+          `https://api.hgbrasil.com/weather?format=json-cors&key=${API_KEY}&city_name=${city}`
+        );
+        const data = await response.json();
+
         if (data.results) {
-          setWeatherData(data.results);
-        } else {
-          console.error("Erro na resposta da API:", data);
+          setWeather(data.results);
+          setForecast(data.results.forecast.slice(1, 4));
         }
-      })
-      .catch((error) => console.error("Erro na requisição:", error));
-  }, []);
+      } catch (error) {
+        console.error("Erro ao buscar dados da API", error);
+      }
+    }
+
+    fetchWeather();
+  }, [city]);
 
   return (
     <div className="app-container">
-      <SearchBar />
-      {weatherData && (
+      <SearchBar onSearch={setCity} />
+      {weather && (
         <>
-          <h1>{weatherData.city}</h1>
-          <WeatherCard
-            temperature={weatherData.temp}
-            condition={weatherData.description}
-            humidity={weatherData.humidity}
-            minTemp={weatherData.forecast[0].min}
-            maxTemp={weatherData.forecast[0].max}
-          />
-          <ForecastList forecasts={weatherData.forecast.slice(1, 4)} />
+          <h1>{weather.city}</h1>
+          <WeatherCard weather={weather} />
+          <ForecastList forecasts={forecast} />
         </>
       )}
     </div>
